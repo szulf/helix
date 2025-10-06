@@ -37,7 +37,7 @@ pub enum Error {
     #[error("protocol error: {0}")]
     Rpc(#[from] jsonrpc::Error),
     #[error("failed to parse: {0}")]
-    Parse(Box<dyn std::error::Error + Send + Sync>),
+    Parse(#[from] serde_json::Error),
     #[error("IO Error: {0}")]
     IO(#[from] std::io::Error),
     #[error("request {0} timed out")]
@@ -50,18 +50,6 @@ pub enum Error {
     ExecutableNotFound(#[from] helix_stdx::env::ExecutableNotFoundError),
     #[error(transparent)]
     Other(#[from] anyhow::Error),
-}
-
-impl From<serde_json::Error> for Error {
-    fn from(value: serde_json::Error) -> Self {
-        Self::Parse(Box::new(value))
-    }
-}
-
-impl From<sonic_rs::Error> for Error {
-    fn from(value: sonic_rs::Error) -> Self {
-        Self::Parse(Box::new(value))
-    }
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -475,7 +463,6 @@ pub enum MethodCall {
     RegisterCapability(lsp::RegistrationParams),
     UnregisterCapability(lsp::UnregistrationParams),
     ShowDocument(lsp::ShowDocumentParams),
-    WorkspaceDiagnosticRefresh,
 }
 
 impl MethodCall {
@@ -507,7 +494,6 @@ impl MethodCall {
                 let params: lsp::ShowDocumentParams = params.parse()?;
                 Self::ShowDocument(params)
             }
-            lsp::request::WorkspaceDiagnosticRefresh::METHOD => Self::WorkspaceDiagnosticRefresh,
             _ => {
                 return Err(Error::Unhandled);
             }

@@ -441,7 +441,7 @@ impl Tree {
         }
     }
 
-    pub fn traverse(&self) -> Traverse<'_> {
+    pub fn traverse(&self) -> Traverse {
         Traverse::new(self)
     }
 

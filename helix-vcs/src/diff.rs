@@ -72,7 +72,7 @@ impl DiffHandle {
     }
 
     /// Load the actual diff
-    pub fn load(&self) -> Diff<'_> {
+    pub fn load(&self) -> Diff {
         Diff {
             diff: self.diff.read(),
             inverted: self.inverted,

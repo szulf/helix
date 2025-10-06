@@ -125,14 +125,12 @@ impl Transport {
 
         info!("[{}] <- DAP {}", id, msg);
 
-        // NOTE: We avoid using `?` here, since it would return early on error
-        // and skip clearing `content`. By returning the result directly instead,
-        // we ensure `content.clear()` is always called.
-        let output = sonic_rs::from_slice(content).map_err(Into::into);
+        // try parsing as output (server response) or call (server request)
+        let output: serde_json::Result<Payload> = serde_json::from_str(msg);
 
         content.clear();
 
-        output
+        Ok(output?)
     }
 
     async fn recv_server_error(

@@ -102,7 +102,7 @@ struct EventAccumulator {
     render_lock: Option<RenderLock>,
 }
 
-impl EventAccumulator {
+impl<'a> EventAccumulator {
     fn new() -> EventAccumulator {
         EventAccumulator {
             diff_base: None,

@@ -7,6 +7,5 @@
  (derived_type_definition)
  (function)
  (subroutine)
- (module_procedure)
  (interface)
 ] @fold

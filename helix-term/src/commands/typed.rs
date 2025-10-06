@@ -29,6 +29,15 @@ pub struct TypableCommand {
     pub signature: Signature,
 }
 
+impl TypableCommand {
+    fn completer_for_argument_number(&self, n: usize) -> &Completer {
+        match self.completer.positional_args.get(n) {
+            Some(completer) => completer,
+            _ => &self.completer.var_args,
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct CommandCompleter {
     // Arguments with specific completion methods based on their position.
@@ -57,13 +66,6 @@ impl CommandCompleter {
         Self {
             positional_args: &[],
             var_args: completer,
-        }
-    }
-
-    fn for_argument_number(&self, n: usize) -> &Completer {
-        match self.positional_args.get(n) {
-            Some(completer) => completer,
-            _ => &self.var_args,
         }
     }
 }
@@ -2656,13 +2658,13 @@ const BUFFER_CLOSE_OTHERS_SIGNATURE: Signature = Signature {
 // but Signature does not yet allow for var args.
 
 /// This command handles all of its input as-is with no quoting or flags.
-pub const SHELL_SIGNATURE: Signature = Signature {
+const SHELL_SIGNATURE: Signature = Signature {
     positionals: (1, Some(2)),
     raw_after: Some(1),
     ..Signature::DEFAULT
 };
 
-pub const SHELL_COMPLETER: CommandCompleter = CommandCompleter::positional(&[
+const SHELL_COMPLETER: CommandCompleter = CommandCompleter::positional(&[
     // Command name
     completers::program,
     // Shell argument(s)
@@ -3740,7 +3742,7 @@ pub(super) fn command_mode(cx: &mut Context) {
     cx.push_layer(Box::new(prompt));
 }
 
-fn command_line_doc(input: &str) -> Option<Cow<'_, str>> {
+fn command_line_doc(input: &str) -> Option<Cow<str>> {
     let (command, _, _) = command_line::split(input);
     let command = TYPABLE_COMMAND_MAP.get(command)?;
 
@@ -3829,15 +3831,14 @@ fn complete_command_line(editor: &Editor, input: &str) -> Vec<ui::prompt::Comple
             .get(command)
             .map_or_else(Vec::new, |cmd| {
                 let args_offset = command.len() + 1;
-                complete_command_args(editor, cmd.signature, &cmd.completer, rest, args_offset)
+                complete_command_args(editor, cmd, rest, args_offset)
             })
     }
 }
 
-pub fn complete_command_args(
+fn complete_command_args(
     editor: &Editor,
-    signature: Signature,
-    completer: &CommandCompleter,
+    command: &TypableCommand,
     input: &str,
     offset: usize,
 ) -> Vec<ui::prompt::Completion> {
@@ -3849,7 +3850,7 @@ pub fn complete_command_args(
     let cursor = input.len();
     let prefix = &input[..cursor];
     let mut tokenizer = Tokenizer::new(prefix, false);
-    let mut args = Args::new(signature, false);
+    let mut args = Args::new(command.signature, false);
     let mut final_token = None;
     let mut is_last_token = true;
 
@@ -3893,7 +3894,7 @@ pub fn complete_command_args(
                         .len()
                         .checked_sub(1)
                         .expect("completion state to be positional");
-                    let completer = completer.for_argument_number(n);
+                    let completer = command.completer_for_argument_number(n);
 
                     completer(editor, &token.content)
                         .into_iter()
@@ -3902,7 +3903,7 @@ pub fn complete_command_args(
                 }
                 CompletionState::Flag(_) => fuzzy_match(
                     token.content.trim_start_matches('-'),
-                    signature.flags.iter().map(|flag| flag.name),
+                    command.signature.flags.iter().map(|flag| flag.name),
                     false,
                 )
                 .into_iter()
@@ -3927,7 +3928,7 @@ pub fn complete_command_args(
                         .len()
                         .checked_sub(1)
                         .expect("completion state to be positional");
-                    completer.for_argument_number(n)
+                    command.completer_for_argument_number(n)
                 });
             complete_expand(editor, &token, arg_completer, offset + token.content_start)
         }

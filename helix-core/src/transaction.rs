@@ -520,7 +520,7 @@ impl ChangeSet {
         pos
     }
 
-    pub fn changes_iter(&self) -> ChangeIterator<'_> {
+    pub fn changes_iter(&self) -> ChangeIterator {
         ChangeIterator::new(self)
     }
 }
@@ -753,7 +753,7 @@ impl Transaction {
         })
     }
 
-    pub fn changes_iter(&self) -> ChangeIterator<'_> {
+    pub fn changes_iter(&self) -> ChangeIterator {
         self.changes.changes_iter()
     }
 }

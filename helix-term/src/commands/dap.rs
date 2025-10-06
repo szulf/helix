@@ -164,13 +164,6 @@ pub fn dap_start_impl(
                         arr.iter().map(|v| v.replace(&pattern, &param)).collect(),
                     ),
                     DebugArgumentValue::Boolean(_) => value,
-                    DebugArgumentValue::Table(map) => DebugArgumentValue::Table(
-                        map.into_iter()
-                            .map(|(mk, mv)| {
-                                (mk.replace(&pattern, &param), mv.replace(&pattern, &param))
-                            })
-                            .collect(),
-                    ),
                 };
             }
         }
@@ -188,9 +181,6 @@ pub fn dap_start_impl(
             }
             DebugArgumentValue::Boolean(bool) => {
                 args.insert(k, to_value(bool).unwrap());
-            }
-            DebugArgumentValue::Table(map) => {
-                args.insert(k, to_value(map).unwrap());
             }
         }
     }
